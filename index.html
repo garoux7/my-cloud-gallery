@@ -88,8 +88,8 @@ button:active {
     background: #dc3545;
 }
 
-.green {
-    background: #198754;
+.hidden {
+    display: none !important;
 }
 
 .auth-buttons {
@@ -99,10 +99,6 @@ button:active {
 
 .auth-buttons button {
     flex: 1;
-}
-
-.hidden {
-    display: none !important;
 }
 
 .user-bar {
@@ -234,7 +230,8 @@ button:active {
     padding: 40px 10px;
 }
 
-#message {
+#message,
+#authMessage {
     margin-top: 10px;
     font-size: 14px;
     color: #9ca3af;
@@ -296,7 +293,6 @@ button:active {
 
 <div class="container">
 
-    <!-- LOGIN -->
     <div id="authCard" class="card">
 
         <h2>🔐 Login</h2>
@@ -314,8 +310,15 @@ button:active {
         >
 
         <div class="auth-buttons">
-            <button id="loginBtn">Login</button>
-            <button id="signupBtn" class="secondary">Sign Up</button>
+
+            <button id="loginBtn">
+                Login
+            </button>
+
+            <button id="signupBtn" class="secondary">
+                Sign Up
+            </button>
+
         </div>
 
         <div id="authMessage"></div>
@@ -323,21 +326,24 @@ button:active {
     </div>
 
 
-    <!-- GALLERY -->
     <div id="galleryApp" class="hidden">
 
         <div class="user-bar">
 
-            <div class="user-email" id="userEmail"></div>
+            <div
+                class="user-email"
+                id="userEmail">
+            </div>
 
-            <button id="logoutBtn" class="secondary">
+            <button
+                id="logoutBtn"
+                class="secondary">
                 Logout
             </button>
 
         </div>
 
 
-        <!-- UPLOAD -->
         <div class="card">
 
             <h3>📤 Add Photos</h3>
@@ -345,13 +351,16 @@ button:active {
             <div class="upload-area">
 
                 <label class="upload-label">
+
                     📸 Choose Photos
+
                     <input
                         type="file"
                         id="fileInput"
                         accept="image/*"
                         multiple
                     >
+
                 </label>
 
             </div>
@@ -382,16 +391,20 @@ button:active {
 
             </select>
 
-            <div id="uploadProgress" class="progress"></div>
+            <div
+                id="uploadProgress"
+                class="progress">
+            </div>
 
-            <div class="storage" id="storageInfo">
+            <div
+                class="storage"
+                id="storageInfo">
                 Loading storage information...
             </div>
 
         </div>
 
 
-        <!-- SEARCH -->
         <div class="card">
 
             <input
@@ -450,10 +463,14 @@ button:active {
         </div>
 
 
-        <!-- GALLERY -->
-        <div id="gallery" class="gallery"></div>
+        <div
+            id="gallery"
+            class="gallery">
+        </div>
 
-        <div id="empty" class="empty hidden">
+        <div
+            id="empty"
+            class="empty hidden">
             No photos found.
         </div>
 
@@ -461,8 +478,6 @@ button:active {
 
 </div>
 
-
-<!-- FULLSCREEN -->
 
 <div id="fullscreen">
 
@@ -475,15 +490,14 @@ button:active {
 </div>
 
 
-<script type="module">
+<!-- SUPABASE LIBRARY -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-import {
-    createClient
-} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
+<script>
 
 /* =========================
-   SUPABASE CONFIG
+   SUPABASE
 ========================= */
 
 const SUPABASE_URL =
@@ -492,6 +506,1027 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_HE0hav4IkkUy7sYDDaPO7A_PSqSGHSn";
 
+
 const supabase =
-    createClient(
-        SUPABASE
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const authCard =
+    document.getElementById("authCard");
+
+const galleryApp =
+    document.getElementById("galleryApp");
+
+const emailInput =
+    document.getElementById("email");
+
+const passwordInput =
+    document.getElementById("password");
+
+const loginBtn =
+    document.getElementById("loginBtn");
+
+const signupBtn =
+    document.getElementById("signupBtn");
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+const authMessage =
+    document.getElementById("authMessage");
+
+const userEmail =
+    document.getElementById("userEmail");
+
+const fileInput =
+    document.getElementById("fileInput");
+
+const categorySelect =
+    document.getElementById("categorySelect");
+
+const gallery =
+    document.getElementById("gallery");
+
+const empty =
+    document.getElementById("empty");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const storageInfo =
+    document.getElementById("storageInfo");
+
+const uploadProgress =
+    document.getElementById("uploadProgress");
+
+const fullscreen =
+    document.getElementById("fullscreen");
+
+const fullscreenImage =
+    document.getElementById("fullscreenImage");
+
+const closeFullscreen =
+    document.getElementById("closeFullscreen");
+
+
+let currentUser = null;
+let photos = [];
+let selectedCategory = "All";
+
+
+/* =========================
+   CHECK LOGIN
+========================= */
+
+async function checkUser() {
+
+    const result =
+        await supabase.auth.getUser();
+
+    if (result.data.user) {
+
+        currentUser =
+            result.data.user;
+
+        showGallery();
+
+    } else {
+
+        showLogin();
+
+    }
+
+}
+
+
+/* =========================
+   SHOW LOGIN
+========================= */
+
+function showLogin() {
+
+    authCard.classList.remove(
+        "hidden"
+    );
+
+    galleryApp.classList.add(
+        "hidden"
+    );
+
+}
+
+
+/* =========================
+   SHOW GALLERY
+========================= */
+
+function showGallery() {
+
+    authCard.classList.add(
+        "hidden"
+    );
+
+    galleryApp.classList.remove(
+        "hidden"
+    );
+
+    userEmail.textContent =
+        currentUser.email;
+
+    loadPhotos();
+
+}
+
+
+/* =========================
+   SIGN UP
+========================= */
+
+signupBtn.addEventListener(
+    "click",
+    async function () {
+
+        const email =
+            emailInput.value.trim();
+
+        const password =
+            passwordInput.value;
+
+
+        if (!email || !password) {
+
+            authMessage.textContent =
+                "Enter email and password.";
+
+            return;
+
+        }
+
+
+        if (password.length < 6) {
+
+            authMessage.textContent =
+                "Password must be at least 6 characters.";
+
+            return;
+
+        }
+
+
+        authMessage.textContent =
+            "Creating account...";
+
+
+        const result =
+            await supabase.auth.signUp({
+                email: email,
+                password: password
+            });
+
+
+        if (result.error) {
+
+            authMessage.textContent =
+                result.error.message;
+
+            return;
+
+        }
+
+
+        authMessage.textContent =
+            "Account created! Check your email if confirmation is required.";
+
+    }
+);
+
+
+/* =========================
+   LOGIN
+========================= */
+
+loginBtn.addEventListener(
+    "click",
+    async function () {
+
+        const email =
+            emailInput.value.trim();
+
+        const password =
+            passwordInput.value;
+
+
+        if (!email || !password) {
+
+            authMessage.textContent =
+                "Enter email and password.";
+
+            return;
+
+        }
+
+
+        authMessage.textContent =
+            "Logging in...";
+
+
+        const result =
+            await supabase.auth.signInWithPassword({
+
+                email: email,
+
+                password: password
+
+            });
+
+
+        if (result.error) {
+
+            authMessage.textContent =
+                result.error.message;
+
+            return;
+
+        }
+
+
+        currentUser =
+            result.data.user;
+
+        showGallery();
+
+    }
+);
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+logoutBtn.addEventListener(
+    "click",
+    async function () {
+
+        await supabase.auth.signOut();
+
+        currentUser = null;
+
+        photos = [];
+
+        gallery.innerHTML = "";
+
+        showLogin();
+
+    }
+);
+
+
+/* =========================
+   AUTH STATE
+========================= */
+
+supabase.auth.onAuthStateChange(
+    function (_event, session) {
+
+        if (session && session.user) {
+
+            currentUser =
+                session.user;
+
+            showGallery();
+
+        } else {
+
+            currentUser = null;
+
+            showLogin();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   UPLOAD
+========================= */
+
+fileInput.addEventListener(
+    "change",
+    async function () {
+
+        const files =
+            Array.from(
+                fileInput.files
+            );
+
+
+        if (!files.length) {
+            return;
+        }
+
+
+        if (!currentUser) {
+
+            alert(
+                "Please login first."
+            );
+
+            return;
+
+        }
+
+
+        const category =
+            categorySelect.value;
+
+
+        let completed = 0;
+
+
+        for (const file of files) {
+
+            completed++;
+
+
+            uploadProgress.textContent =
+                "Uploading " +
+                completed +
+                "/" +
+                files.length +
+                ": " +
+                file.name;
+
+
+            try {
+
+                await uploadPhoto(
+                    file,
+                    category
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Could not upload " +
+                    file.name +
+                    ": " +
+                    error.message
+                );
+
+            }
+
+        }
+
+
+        fileInput.value = "";
+
+        uploadProgress.textContent =
+            "Upload complete.";
+
+        await loadPhotos();
+
+    }
+);
+
+
+/* =========================
+   UPLOAD PHOTO
+========================= */
+
+async function uploadPhoto(
+    file,
+    category
+) {
+
+    if (
+        file.size >
+        50 * 1024 * 1024
+    ) {
+
+        throw new Error(
+            "File is larger than 50 MB."
+        );
+
+    }
+
+
+    const safeName =
+        file.name.replace(
+            /[^a-zA-Z0-9._-]/g,
+            "_"
+        );
+
+
+    const filePath =
+        currentUser.id +
+        "/" +
+        crypto.randomUUID() +
+        "-" +
+        safeName;
+
+
+    const uploadResult =
+        await supabase.storage
+            .from("photos")
+            .upload(
+                filePath,
+                file,
+                {
+                    cacheControl: "3600",
+                    upsert: false
+                }
+            );
+
+
+    if (uploadResult.error) {
+
+        throw uploadResult.error;
+
+    }
+
+
+    const databaseResult =
+        await supabase
+            .from("photos")
+            .insert({
+
+                user_id:
+                    currentUser.id,
+
+                file_path:
+                    filePath,
+
+                name:
+                    file.name,
+
+                category:
+                    category,
+
+                favorite:
+                    false,
+
+                file_size:
+                    file.size
+
+            });
+
+
+    if (databaseResult.error) {
+
+        await supabase.storage
+            .from("photos")
+            .remove([
+                filePath
+            ]);
+
+        throw databaseResult.error;
+
+    }
+
+}
+
+
+/* =========================
+   LOAD PHOTOS
+========================= */
+
+async function loadPhotos() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const result =
+        await supabase
+            .from("photos")
+            .select("*")
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (result.error) {
+
+        console.error(
+            result.error
+        );
+
+        alert(
+            "Could not load photos: " +
+            result.error.message
+        );
+
+        return;
+
+    }
+
+
+    photos =
+        result.data || [];
+
+
+    await renderPhotos();
+
+    updateStorageInfo();
+
+}
+
+
+/* =========================
+   RENDER PHOTOS
+========================= */
+
+async function renderPhotos() {
+
+    gallery.innerHTML = "";
+
+
+    const search =
+        searchInput.value
+            .trim()
+            .toLowerCase();
+
+
+    const filtered =
+        photos.filter(
+            function (photo) {
+
+                const matchesSearch =
+                    photo.name
+                        .toLowerCase()
+                        .includes(search);
+
+
+                let matchesCategory =
+                    true;
+
+
+                if (
+                    selectedCategory ===
+                    "Favorites"
+                ) {
+
+                    matchesCategory =
+                        photo.favorite === true;
+
+                }
+                else if (
+                    selectedCategory !==
+                    "All"
+                ) {
+
+                    matchesCategory =
+                        photo.category ===
+                        selectedCategory;
+
+                }
+
+
+                return (
+                    matchesSearch &&
+                    matchesCategory
+                );
+
+            }
+        );
+
+
+    if (!filtered.length) {
+
+        empty.classList.remove(
+            "hidden"
+        );
+
+        return;
+
+    }
+
+
+    empty.classList.add(
+        "hidden"
+    );
+
+
+    for (
+        const photo of filtered
+    ) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "photo";
+
+
+        const img =
+            document.createElement(
+                "img"
+            );
+
+
+        const urlResult =
+            await supabase.storage
+                .from("photos")
+                .createSignedUrl(
+                    photo.file_path,
+                    3600
+                );
+
+
+        if (urlResult.error) {
+
+            console.error(
+                urlResult.error
+            );
+
+            continue;
+
+        }
+
+
+        img.src =
+            urlResult.data.signedUrl;
+
+
+        img.addEventListener(
+            "click",
+            function () {
+
+                fullscreenImage.src =
+                    urlResult.data.signedUrl;
+
+                fullscreen.style.display =
+                    "flex";
+
+            }
+        );
+
+
+        const star =
+            document.createElement(
+                "button"
+            );
+
+        star.className =
+            "star";
+
+        star.textContent =
+            photo.favorite
+                ? "★"
+                : "☆";
+
+
+        star.addEventListener(
+            "click",
+            async function (event) {
+
+                event.stopPropagation();
+
+                await toggleFavorite(
+                    photo
+                );
+
+            }
+        );
+
+
+        const deleteBtn =
+            document.createElement(
+                "button"
+            );
+
+        deleteBtn.className =
+            "delete";
+
+        deleteBtn.textContent =
+            "🗑";
+
+
+        deleteBtn.addEventListener(
+            "click",
+            async function (event) {
+
+                event.stopPropagation();
+
+                await deletePhoto(
+                    photo
+                );
+
+            }
+        );
+
+
+        const name =
+            document.createElement(
+                "div"
+            );
+
+        name.className =
+            "photo-name";
+
+        name.textContent =
+            photo.name;
+
+
+        div.appendChild(img);
+
+        div.appendChild(star);
+
+        div.appendChild(deleteBtn);
+
+        div.appendChild(name);
+
+        gallery.appendChild(div);
+
+    }
+
+}
+
+
+/* =========================
+   FAVORITE
+========================= */
+
+async function toggleFavorite(
+    photo
+) {
+
+    const result =
+        await supabase
+            .from("photos")
+            .update({
+                favorite:
+                    !photo.favorite
+            })
+            .eq(
+                "id",
+                photo.id
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            );
+
+
+    if (result.error) {
+
+        alert(
+            result.error.message
+        );
+
+        return;
+
+    }
+
+
+    photo.favorite =
+        !photo.favorite;
+
+
+    await renderPhotos();
+
+}
+
+
+/* =========================
+   DELETE
+========================= */
+
+async function deletePhoto(
+    photo
+) {
+
+    const confirmed =
+        confirm(
+            'Delete "' +
+            photo.name +
+            '"?'
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const storageResult =
+        await supabase.storage
+            .from("photos")
+            .remove([
+                photo.file_path
+            ]);
+
+
+    if (storageResult.error) {
+
+        alert(
+            "Could not delete file: " +
+            storageResult.error.message
+        );
+
+        return;
+
+    }
+
+
+    const databaseResult =
+        await supabase
+            .from("photos")
+            .delete()
+            .eq(
+                "id",
+                photo.id
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            );
+
+
+    if (databaseResult.error) {
+
+        alert(
+            "Could not delete database record: " +
+            databaseResult.error.message
+        );
+
+        return;
+
+    }
+
+
+    photos =
+        photos.filter(
+            function (p) {
+                return p.id !== photo.id;
+            }
+        );
+
+
+    await renderPhotos();
+
+    updateStorageInfo();
+
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+searchInput.addEventListener(
+    "input",
+    function () {
+
+        renderPhotos();
+
+    }
+);
+
+
+/* =========================
+   CATEGORY FILTER
+========================= */
+
+document
+    .querySelectorAll(".category")
+    .forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    document
+                        .querySelectorAll(
+                            ".category"
+                        )
+                        .forEach(
+                            function (b) {
+
+                                b.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                    button.classList.add(
+                        "active"
+                    );
+
+
+                    selectedCategory =
+                        button.dataset.category;
+
+
+                    renderPhotos();
+
+                }
+            );
+
+        }
+    );
+
+
+/* =========================
+   STORAGE INFO
+========================= */
+
+function updateStorageInfo() {
+
+    let total = 0;
+
+
+    photos.forEach(
+        function (photo) {
+
+            total +=
+                Number(
+                    photo.file_size || 0
+                );
+
+        }
+    );
+
+
+    const mb =
+        total /
+        (1024 * 1024);
+
+
+    storageInfo.textContent =
+        mb.toFixed(2) +
+        " MB used • Supabase cloud storage";
+
+}
+
+
+/* =========================
+   FULLSCREEN
+========================= */
+
+closeFullscreen.addEventListener(
+    "click",
+    function () {
+
+        fullscreen.style.display =
+            "none";
+
+        fullscreenImage.src = "";
+
+    }
+);
+
+
+fullscreen.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            event.target ===
+            fullscreen
+        ) {
+
+            fullscreen.style.display =
+                "none";
+
+            fullscreenImage.src = "";
+
+        }
+
+    }
+);
+
+
+/* =========================
+   START APP
+========================= */
+
+checkUser();
+
+</script>
+
+</body>
+</html>
